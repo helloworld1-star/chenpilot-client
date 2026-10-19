@@ -11,8 +11,8 @@ This document outlines the Progressive Web App (PWA) configuration and caching b
 
 ---
 
-## 2. Offline Caching Strategy (Workbox)
-- **Static App Shell**: HTML, CSS, JavaScript chunks, and static images are cached via CacheFirst / NetworkFirst strategies to ensure fast load times and basic offline shell availability.
+## 2. Offline Caching & Service Worker Status
+- **Implementation Status**: This Next.js web client relies on Next.js native HTTP caching, browser standard HTTP headers, and local state persistence rather than an automated Workbox service worker injection.
+- **Static App Shell**: Handled via standard Next.js asset optimization, HTTP caching headers, and browser HTTP cache mechanisms.
 - **Authenticated Route Safety**: 
-  - To prevent stale session data or security leaks, all requests matching `/api/auth/*` and `/api/protected/*` are **explicitly excluded** from service worker caching.
-  - Network requests for authenticated user data always bypass service worker caches and hit live server endpoints directly.
+  - To prevent stale session data or security leaks, all API routes matching `/api/auth/*` and protected endpoints bypass local caching and hit live server endpoints directly.
