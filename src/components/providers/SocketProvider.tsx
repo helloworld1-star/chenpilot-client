@@ -3,11 +3,13 @@
 import React, { createContext, useContext, useEffect, useCallback, useRef, useState, ReactNode } from 'react';
 import { Socket } from 'socket.io-client';
 import { SocketManager, SocketConfig, initializeSocketManager } from '@/services/socketManager';
+import { SocketConnectionState } from '@/types';
 
 interface SocketContextType {
   socket: Socket | null;
   socketManager: SocketManager | null;
   isConnected: boolean;
+  connectionState: SocketConnectionState;
   connect: () => void;
   disconnect: () => void;
   emit: (event: string, data?: unknown) => boolean;
@@ -29,12 +31,26 @@ export function SocketProvider({ children, config, configKey, autoConnect = true
   const [socketManager, setSocketManager] = useState<SocketManager | null>(null);
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [connectionState, setConnectionState] = useState<SocketConnectionState>('unknown');
 
   // Stable handler refs so the same function identity is used for on() and off().
   // Using refs avoids declaring the handlers as useCallback dependencies and
   // ensures off() can always remove exactly what on() registered.
-  const handleConnect = useRef(() => setIsConnected(true));
-  const handleDisconnect = useRef(() => setIsConnected(false));
+  const handleConnect = useRef(() => {
+    setIsConnected(true);
+    setConnectionState('connected');
+  });
+  const handleDisconnect = useRef(() => {
+    setIsConnected(false);
+    setConnectionState('disconnected');
+  });
+  const handleReconnecting = useRef(() => {
+    setConnectionState('reconnecting');
+  });
+  const handleConnectError = useRef(() => {
+    setIsConnected(false);
+    setConnectionState('failed');
+  });
 
   /**
    * Registers the connect/disconnect state handlers exactly once per manager.
@@ -43,8 +59,12 @@ export function SocketProvider({ children, config, configKey, autoConnect = true
   const registerStateHandlers = useCallback((manager: SocketManager) => {
     manager.off('connect', handleConnect.current);
     manager.off('disconnect', handleDisconnect.current);
+    manager.off('reconnect_attempt', handleReconnecting.current);
+    manager.off('connect_error', handleConnectError.current);
     manager.on('connect', handleConnect.current);
     manager.on('disconnect', handleDisconnect.current);
+    manager.on('reconnect_attempt', handleReconnecting.current);
+    manager.on('connect_error', handleConnectError.current);
   }, []);
 
   useEffect(() => {
@@ -52,9 +72,11 @@ export function SocketProvider({ children, config, configKey, autoConnect = true
     setSocketManager(manager);
 
     if (autoConnect) {
+      setConnectionState('reconnecting');
       const socketInstance = manager.connect();
       setSocket(socketInstance);
       setIsConnected(socketInstance.connected);
+      setConnectionState(socketInstance.connected ? 'connected' : 'disconnected');
       registerStateHandlers(manager);
     }
 
@@ -65,9 +87,11 @@ export function SocketProvider({ children, config, configKey, autoConnect = true
 
   const connect = useCallback(() => {
     if (socketManager) {
+      setConnectionState('reconnecting');
       const socketInstance = socketManager.connect();
       setSocket(socketInstance);
       setIsConnected(socketInstance.connected);
+      setConnectionState(socketInstance.connected ? 'connected' : 'disconnected');
       registerStateHandlers(socketManager);
     }
   }, [socketManager, registerStateHandlers]);
@@ -77,6 +101,7 @@ export function SocketProvider({ children, config, configKey, autoConnect = true
       socketManager.disconnect();
       setSocket(null);
       setIsConnected(false);
+      setConnectionState('disconnected');
     }
   };
 
@@ -100,6 +125,7 @@ export function SocketProvider({ children, config, configKey, autoConnect = true
     socket,
     socketManager,
     isConnected,
+    connectionState,
     connect,
     disconnect,
     emit,

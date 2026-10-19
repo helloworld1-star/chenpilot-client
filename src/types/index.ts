@@ -188,6 +188,9 @@ export interface ExecutionStep {
   substeps?: ExecutionStep[];
 }
 
+// Socket Connection State Types
+export type SocketConnectionState = 'unknown' | 'connected' | 'reconnecting' | 'disconnected' | 'failed';
+
 // Chat and Message Types
 
 /** Discriminates between plain text and voice messages */

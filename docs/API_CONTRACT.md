@@ -110,6 +110,22 @@ The service includes methods for Stellar/Starknet account and funding paths, but
 
 `topPools` items use `LiquidityPool`: pool id/name, token1/token2 metadata, reserve and liquidity strings, APR, 24-hour volume, fee, active flag, and `created_at`.
 
+## Real-Time Socket Connection State Model
+
+Socket connection state is managed via `SocketProvider` and exposed through `useSocket()` using the typed `SocketConnectionState` union:
+
+```ts
+export type SocketConnectionState = 'unknown' | 'connected' | 'reconnecting' | 'disconnected' | 'failed';
+```
+
+- **`unknown`**: Initial state prior to any connection attempt.
+- **`connected`**: Successfully connected to the Socket.io backend server.
+- **`reconnecting`**: Actively attempting to reconnect or establish a connection.
+- **`disconnected`**: Explicitly or implicitly disconnected from the server.
+- **`failed`**: Connection attempt failed due to an error (`connect_error`).
+
+UI components such as `OfflineIndicator` and widgets consume this shared state model consistently to display accurate connection indicators and message queue status.
+
 ## Browser Security And CSP Reports
 
 Next.js applies the security headers defined in [`src/security/securityHeaders.ts`](../src/security/securityHeaders.ts) to every route. The content security policy allows Google OAuth and font endpoints, Stellar Horizon, and API/socket origins configured by `NEXT_PUBLIC_API_BASE_URL` and `NEXT_PUBLIC_SOCKET_URL`.
