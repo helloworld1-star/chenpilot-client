@@ -757,6 +757,7 @@ class ApiService {
 
   /**
    * Send a query to the AI agent. Attempts connected experimental agent service first, falling back to backend `/query`.
+   * Note: Non-idempotent payment and signing actions are excluded from offline queueing by default to prevent unsafe replays.
    * Does NOT throw on backend/execution error; catches exceptions and returns a resolved `AgentQueryResponse` object with `success: false` and friendly message.
    *
    * @param data - Request payload containing user query string.

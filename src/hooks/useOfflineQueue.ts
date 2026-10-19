@@ -9,6 +9,7 @@ import {
 } from '@/store/slices/chatSlice';
 import toast from 'react-hot-toast';
 
+
 export const useOfflineQueue = () => {
   const dispatch = useAppDispatch();
   const { isOnline, messageQueue } = useAppSelector((state) => state.chat);
@@ -49,7 +50,20 @@ export const useOfflineQueue = () => {
   }, [messageQueue, dispatch]);
 
   const queueMessageForSending = useCallback(
-    (query: string) => {
+    (query: string, category: OperationCategory = 'chat') => {
+      if (!isOperationQueueable(query, category)) {
+        toast.error('Payment and signing actions cannot be queued offline by default.');
+        return null;
+      }
+      // Duplicate replay protection check
+      const existingDuplicate = messageQueue.find(
+        (m: { id: string; query: string; timestamp?: string }) => m.query.trim().toLowerCase() === query.trim().toLowerCase()
+      );
+      if (existingDuplicate) {
+        toast.error('Duplicate operation already exists in offline queue.');
+        return existingDuplicate.id;
+      }
+
       const msgId = `queued_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       dispatch(
         queueMessage({
@@ -57,9 +71,10 @@ export const useOfflineQueue = () => {
           query,
         })
       );
+      toast.success('Operation queued safely for offline replay.');
       return msgId;
     },
-    [dispatch]
+    [dispatch, messageQueue]
   );
 
   return {
@@ -67,5 +82,33 @@ export const useOfflineQueue = () => {
     messageQueue,
     queueMessageForSending,
     processQueue,
+    isOperationQueueable,
+  };
+};
+export type OperationCategory = 'chat' | 'payment' | 'signing' | 'general';
+
+export interface ClassifiedOperation {
+  id: string;
+  query: string;
+  category: OperationCategory;
+  idempotent: boolean;
+  timestamp: string;
+}
+
+export const isOperationQueueable = (query: string, category: OperationCategory = 'chat'): boolean => {
+  if (category === 'payment' || category === 'signing') {
+    return false;
+  }
+  const lower = query.toLowerCase();
+  if (
+    lower.includes('pay onchain') ||
+    lower.includes('send payment') ||
+    lower.includes('sign transaction') ||
+    lower.includes('transfer ') ||
+    lower.includes('deploy account')
+  ) {
+    return false;
+  }
+  return true;
   };
 };
