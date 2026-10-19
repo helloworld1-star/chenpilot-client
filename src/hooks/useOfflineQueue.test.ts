@@ -8,7 +8,7 @@ describe('useOfflineQueue classification and duplicate protection', () => {
   });
 
   it('excludes payment and signing actions by default', () => {
-    expect(isOperationQueueable('Send payment of 50 XLM to Bob', 'payment')).toBe(true).valueOf() === false;
+    expect(isOperationQueueable('Send payment of 50 XLM to Bob', 'payment')).toBe(false);
     expect(isOperationQueueable('sign transaction 0xabc123', 'signing')).toBe(false);
     expect(isOperationQueueable('Transfer 10 USDC', 'chat')).toBe(false);
     expect(isOperationQueueable('Deploy account now', 'chat')).toBe(false);
