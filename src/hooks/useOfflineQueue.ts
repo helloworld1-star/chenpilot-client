@@ -36,16 +36,16 @@ export const useOfflineQueue = () => {
         dispatch(dequeueMessage(queuedMsg.id));
         dispatch(removePendingMessage(queuedMsg.id));
 
-        toast.success('Queued message sent');
+        toast.success(`Replay Outcome: Success for queued item (${queuedMsg.id})`);
       } catch (error: any) {
         dispatch(removePendingMessage(queuedMsg.id));
         const errorMsg = error instanceof Error ? error.message : String(error);
-        toast.error(`Failed to send queued message: ${errorMsg}`);
+        toast.error(`Replay Outcome: Failed for queued item (${queuedMsg.id}): ${errorMsg}`);
       }
     }
 
     if (queueCopy.length > 0) {
-      toast.success(`All ${queueCopy.length} queued message${queueCopy.length !== 1 ? 's' : ''} sent!`);
+      toast.success(`Queue replay completed for ${queueCopy.length} item(s).`);
     }
   }, [messageQueue, dispatch]);
 
@@ -110,5 +110,4 @@ export const isOperationQueueable = (query: string, category: OperationCategory 
     return false;
   }
   return true;
-  };
 };
