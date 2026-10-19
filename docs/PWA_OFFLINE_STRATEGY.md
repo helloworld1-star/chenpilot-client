@@ -16,3 +16,13 @@ This document outlines the Progressive Web App (PWA) configuration and caching b
 - **Authenticated Route Safety**: 
   - To prevent stale session data or security leaks, all requests matching `/api/auth/*` and `/api/protected/*` are **explicitly excluded** from service worker caching.
   - Network requests for authenticated user data always bypass service worker caches and hit live server endpoints directly.
+
+---
+
+## 3. Offline Queue & Action Safety Policy
+
+To ensure financial safety and prevent unsafe side effects upon reconnection, offline queueing restricts operations according to strict idempotency and classification guidelines:
+
+- **Action Classification**: Only explicitly supported, idempotent read or general AI query operations are queueable when offline. Keyword analysis identifies operations involving payments, signing, transfers, funding, withdrawals, staking, or contract deployments.
+- **Payment & Signing Exclusion**: Actions containing keywords such as `pay`, `send`, `sign`, `transfer`, `fund`, `withdraw`, `stake`, or `deploy` are **excluded from offline queueing by default** to prevent unauthorized ledger submissions or replay vulnerabilities.
+- **Duplicate Replay Protection**: The client service layer (`ApiService.replayQueuedOperation`) maintains an execution tracking set (`replayedOperationIds`) to ensure that any queued operation replayed upon reconnection is protected against duplicate execution.

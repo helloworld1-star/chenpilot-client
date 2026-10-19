@@ -753,6 +753,34 @@ class ApiService {
     }
   }
 
+  // Offline queue replay protection and backend validation
+  private replayedOperationIds: Set<string> = new Set();
+
+  /**
+   * Replay an offline queued operation with duplicate replay protection.
+   *
+   * @param operationId - Unique identifier for the queued operation.
+   * @param query - Query string to execute.
+   * @returns Promise resolving to AgentQueryResponse.
+   */
+  async replayQueuedOperation(operationId: string, query: string): Promise<AgentQueryResponse> {
+    if (this.replayedOperationIds.has(operationId)) {
+      return {
+        result: {
+          success: true,
+          data: 'Operation already replayed (duplicate protection skipped).',
+          error: undefined
+        }
+      };
+    }
+
+    const response = await this.queryAgent({ query });
+    if (response.result.success) {
+      this.replayedOperationIds.add(operationId);
+    }
+    return response;
+  }
+
   // Agent query - Optimized for backend integration
 
   /**
