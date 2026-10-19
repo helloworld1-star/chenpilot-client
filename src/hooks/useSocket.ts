@@ -8,6 +8,7 @@ export function useSocket() {
     socket: context.socket,
     socketManager: context.socketManager,
     isConnected: context.isConnected,
+    connectionState: context.connectionState,
     connect: context.connect,
     disconnect: context.disconnect,
     emit: context.emit,
@@ -43,10 +44,11 @@ export function useSocketEvent(event: string, callback: (...args: unknown[]) => 
 }
 
 export function useSocketConnection() {
-  const { isConnected, connect, disconnect } = useSocket();
+  const { isConnected, connectionState, connect, disconnect } = useSocket();
   
   return {
     isConnected,
+    connectionState,
     connect,
     disconnect,
   };
