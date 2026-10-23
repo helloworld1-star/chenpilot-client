@@ -11,7 +11,7 @@ export function useSocket() {
     socket: context.socket,
     socketManager: context.socketManager,
     isConnected: context.isConnected,
-    connectionState,
+connectionState,
     isReconnecting: connectionState === 'reconnecting',
     isExhausted: connectionState === 'exhausted',
     reconnectAttempt: context.reconnectAttempt ?? 0,
@@ -52,7 +52,7 @@ export function useSocketEvent(event: string, callback: (...args: unknown[]) => 
 }
 
 export function useSocketConnection() {
-  const {
+const {
     isConnected,
     connectionState,
     isReconnecting,
@@ -63,8 +63,9 @@ export function useSocketConnection() {
     connect,
     disconnect,
   } = useSocket();
-
   return {
+    isConnected,
+const {
     isConnected,
     connectionState,
     isReconnecting,
@@ -72,6 +73,9 @@ export function useSocketConnection() {
     reconnectAttempt,
     maxReconnectAttempts,
     retry,
+    connect,
+    disconnect,
+  } = useSocket();
     connect,
     disconnect,
   };
