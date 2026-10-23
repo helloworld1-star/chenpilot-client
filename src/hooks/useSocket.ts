@@ -52,7 +52,7 @@ export function useSocketEvent(event: string, callback: (...args: unknown[]) => 
 }
 
 export function useSocketConnection() {
-const {
+  const {
     isConnected,
     connectionState,
     isReconnecting,
@@ -65,17 +65,12 @@ const {
   } = useSocket();
   return {
     isConnected,
-const {
-    isConnected,
     connectionState,
     isReconnecting,
     isExhausted,
     reconnectAttempt,
     maxReconnectAttempts,
     retry,
-    connect,
-    disconnect,
-  } = useSocket();
     connect,
     disconnect,
   };
