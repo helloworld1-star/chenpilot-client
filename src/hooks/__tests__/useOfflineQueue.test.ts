@@ -47,4 +47,8 @@ describe('useOfflineQueue - Offline Action Classification and Duplicate Replay P
 
 
 // Create a wrapper with a real store so dispatch works correctly
-const createTestStore = () =>
+const createTestStore = () => ({
+  getState: () => ({}),
+  dispatch: vi.fn(),
+  subscribe: vi.fn(),
+});
