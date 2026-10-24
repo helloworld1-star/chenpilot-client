@@ -1192,15 +1192,6 @@ class ApiService {
 
   async queryAgent(
     data: AgentQueryRequest,
-    options?: { onDelta?: (text: string) => void; signal?: AbortSignal },
-  ): Promise<AgentQueryResponse> {
-    const isAbort = (error: unknown): boolean => {
-      const value = error as { code?: string; name?: string };
-
-// Agent query
-
-  async queryAgent(
-    data: AgentQueryRequest,
     options?: { signal?: AbortSignal },
   ): Promise<AgentQueryResponse> {
     const isAbort = (error: unknown): boolean => {
