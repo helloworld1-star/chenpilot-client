@@ -1115,7 +1115,7 @@ class ApiService {
     }
   }
 
-  // Payment endpoints
+// Payment endpoints
 
   /**
    * Submit a payment to the backend. The backend is expected to create and
@@ -1135,9 +1135,10 @@ class ApiService {
   async sendPayment(
     data: SendPaymentRequest,
   ): Promise<ApiResponse<{ transactionHash: string; status: 'success' | 'failed' }>> {
+    const idempotencyKey = data.idempotencyKey || buildPaymentIdempotencyKey(data);
     const response = await this.api.post<
       ApiResponse<{ transactionHash: string; status: 'success' | 'failed' }>
-    >('/payments/send', data);
+    >('/payments/send', { ...data, idempotencyKey });
     return response.data;
   }
 
@@ -1160,9 +1161,35 @@ class ApiService {
    * }
    * ```
    */
-  async queryAgent(data: AgentQueryRequest): Promise<AgentQueryResponse> {
-    // First try the experimental agent service
-  // Agent query
+  // Offline queue replay protection and backend validation
+  private replayedOperationIds: Set<string> = new Set();
+
+  /**
+   * Replay an offline queued operation with duplicate replay protection.
+   *
+   * @param operationId - Unique identifier for the queued operation.
+   * @param query - Query string to execute.
+   * @returns Promise resolving to AgentQueryResponse.
+   */
+  async replayQueuedOperation(operationId: string, query: string): Promise<AgentQueryResponse> {
+    if (this.replayedOperationIds.has(operationId)) {
+      return {
+        result: {
+          success: true,
+          data: 'Operation already replayed (duplicate protection skipped).',
+          error: undefined
+        }
+      };
+    }
+
+    const response = await this.queryAgent({ query });
+    if (response.result.success) {
+      this.replayedOperationIds.add(operationId);
+    }
+    return response;
+  }
+
+  // First try the experimental agent service
 
   async queryAgent(
     data: AgentQueryRequest,
@@ -1171,6 +1198,14 @@ class ApiService {
     const isAbort = (error: unknown): boolean => {
       const value = error as { code?: string; name?: string };
 
+// Agent query
+
+  async queryAgent(
+    data: AgentQueryRequest,
+    options?: { signal?: AbortSignal },
+  ): Promise<AgentQueryResponse> {
+    const isAbort = (error: unknown): boolean => {
+      const value = error as { code?: string; name?: string };
       return (
         value.code === "ERR_CANCELED" ||
         value.name === "CanceledError" ||
