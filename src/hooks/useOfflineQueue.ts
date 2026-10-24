@@ -1,84 +1,38 @@
-import { useEffect, useCallback } from 'react';
-import { useAppDispatch, useAppSelector } from '@/store';
-import {
-  queueMessage,
-  dequeueMessage,
-  sendMessage,
-} from '@/store/slices/chatSlice';
-import toast from 'react-hot-toast';
+'use client';
 
-export const useOfflineQueue = () => {
-  const dispatch = useAppDispatch();
-  const { isOnline, messageQueue } = useAppSelector((state) => state.chat);
+import { useState, useEffect, useCallback } from 'react';
 
-  // Process queued messages when coming back online
-  useEffect(() => {
-    if (isOnline && messageQueue.length > 0) {
-      processQueue();
-    }
-  }, [isOnline, messageQueue.length, processQueue]);
+export interface OfflineAction {
+  id: string;
+  type: string;
+  payload: any;
+  timestamp?: number;
+}
 
-  const processQueue = useCallback(async () => {
-    const queueCopy = [...messageQueue];
+export function useOfflineQueue() {
+  const [queue, setQueue] = useState<OfflineAction[]>([]);
 
-    for (const queuedMsg of queueCopy) {
-      try {
-        // Send with the queued row's id so it moves queued → sending → sent instead of a
-        // second bubble being added (#266)
-        await dispatch(sendMessage({ query: queuedMsg.query, tempId: queuedMsg.id })).unwrap();
-
-        // Remove from queue
-        dispatch(dequeueMessage(queuedMsg.id));
-
-        toast.success('Queued message sent');
-      } catch (error: unknown) {
-        // The row is now `failed` with a retry action; drop it from the automatic queue
-        dispatch(dequeueMessage(queuedMsg.id));
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        toast.error(`Failed to send queued message: ${errorMsg}`);
-      }
-    }
-
-    if (queueCopy.length > 0) {
-      toast.success(`All ${queueCopy.length} queued message${queueCopy.length !== 1 ? 's' : ''} sent!`);
-    }
-  }, [messageQueue, dispatch]);
-
-  const isQueueableOperation = useCallback((query: string): boolean => {
-    const lower = query.toLowerCase();
-    const forbiddenKeywords = ['pay', 'send', 'sign', 'transfer', 'fund', 'withdraw', 'stake', 'deploy'];
-    for (const keyword of forbiddenKeywords) {
-      if (lower.includes(keyword)) {
-        return false;
-      }
-    }
-    return true;
+  const isSupportedAction = useCallback((type: string): boolean => {
+    const excluded = ['send_payment', 'sign_transaction', 'transfer', 'sign'];
+    return !excluded.includes(type);
   }, []);
 
-  const queueMessageForSending = useCallback(
-    (query: string, forceExplicit = false) => {
-      if (!forceExplicit && !isQueueableOperation(query)) {
-        toast.error('Payment and signing actions are excluded from offline queueing by default.');
-        return null;
+  const enqueueAction = useCallback((action: OfflineAction) => {
+    if (!isSupportedAction(action.type)) {
+      return false;
+    }
+    setQueue((prev) => {
+      if (prev.some((item) => item.id === action.id)) {
+        return prev;
       }
-      const msgId = `queued_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      dispatch(
-        queueMessage({
-          id: msgId,
-          query,
-        })
-      );
-      toast.success('Operation queued for replay when online.');
-      return msgId;
-    },
-    [dispatch, isQueueableOperation]
-  );
+      return [...prev, { ...action, timestamp: Date.now() }];
+    });
+    return true;
+  }, [isSupportedAction]);
 
   return {
-    isOnline,
-    messageQueue,
-    queueMessageForSending,
-    processQueue,
-    isQueueableOperation,
+    queue,
+    enqueueAction,
+    isSupportedAction,
   };
-};
+}
