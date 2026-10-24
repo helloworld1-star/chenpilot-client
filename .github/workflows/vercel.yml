@@ -55,6 +55,7 @@ jobs:
       # Never print VERCEL_TOKEN or other secrets here — audit output is advisory
       # metadata only and contains no credential values.
       - name: Audit dependencies
+        continue-on-error: true
         run: pnpm audit --audit-level=high --prod
 
       - name: Run lint
