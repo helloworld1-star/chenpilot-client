@@ -16,7 +16,7 @@ export const useOfflineQueue = () => {
     if (isOnline && messageQueue.length > 0) {
       processQueue();
     }
-  }, [isOnline]);
+  }, [isOnline, messageQueue.length, processQueue]);
 
   const processQueue = useCallback(async () => {
     const queueCopy = [...messageQueue];
@@ -31,7 +31,7 @@ export const useOfflineQueue = () => {
         dispatch(dequeueMessage(queuedMsg.id));
 
         toast.success('Queued message sent');
-      } catch (error: any) {
+      } catch (error: unknown) {
         // The row is now `failed` with a retry action; drop it from the automatic queue
         dispatch(dequeueMessage(queuedMsg.id));
         const errorMsg = error instanceof Error ? error.message : String(error);
