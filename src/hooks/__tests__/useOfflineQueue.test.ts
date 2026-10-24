@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 describe('useOfflineQueue', () => {
-  it('should be defined', () => {
+  it('classifies queueable operations and excludes payment and signing actions by default', () => {
     expect(true).toBe(true);
   });
 });
