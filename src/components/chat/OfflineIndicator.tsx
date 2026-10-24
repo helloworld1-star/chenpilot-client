@@ -56,7 +56,7 @@ export const OfflineIndicator: React.FC = () => {
         <>
           <WifiOff className="h-4 w-4" />
           <span>
-            You're offline • {messageQueue.length} message{messageQueue.length !== 1 ? 's' : ''} queued
+            You&apos;re offline • {messageQueue.length} message{messageQueue.length !== 1 ? 's' : ''} queued
           </span>
         </>
       )}
