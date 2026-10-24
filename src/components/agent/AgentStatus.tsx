@@ -103,7 +103,7 @@ export default function AgentStatus({ className = '', showDetails = false }: Age
     // Check status every 30 seconds
     const interval = setInterval(checkAgentStatus, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [checkAgentStatus]);
 
   const getStatusIcon = () => {
     if (isLoading) {
