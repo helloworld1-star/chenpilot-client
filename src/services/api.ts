@@ -27,8 +27,11 @@ import {
   AuditLogStats,
   SendPaymentRequest,
 } from '@/types';
-import agentService from './agentService';
-import { tokenRefreshService } from './tokenRefreshService';
+import agentService, { classifyAgentError, isStateChangingQuery, agentErrorMessage } from "./agentService";
+import type { AgentStatus } from "@/types/agent";
+import { parseAgentEnvelope, protocolErrorResult } from "./agentEnvelope";
+import { tokenRefreshService } from "./tokenRefreshService";
+import type {
   MfaStatusData,
   MfaEnrollmentData,
   MfaVerifyRequest,
@@ -36,10 +39,6 @@ import { tokenRefreshService } from './tokenRefreshService';
   PaymentSubmissionResult,
   PaymentStatusResult,
 } from "@/types";
-import agentService, { classifyAgentError, isStateChangingQuery, agentErrorMessage } from "./agentService";
-import type { AgentStatus } from "@/types/agent";
-import { parseAgentEnvelope, protocolErrorResult } from "./agentEnvelope";
-import { tokenRefreshService } from "./tokenRefreshService";
 import type { MissedEventsPage } from "./socketManager";
 import { clearUserScopedStorage } from "./storageInventory";
 import {
