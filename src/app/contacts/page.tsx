@@ -32,79 +32,10 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { formatAddress } from '@/utils/format';
-import { Contact, CreateContactRequest, SUPPORTED_ASSETS, TokenType } from '@/types';
-  Download,
-  Loader2,
-  AlertCircle,
-} from 'lucide-react';
-import { formatAddress } from '@/utils/format';
-import { Contact, ContactExportEnvelope, ContactMemoType, CreateContactRequest } from '@/types';
+import { Contact, CreateContactRequest, SUPPORTED_ASSETS, TokenType, ContactExportEnvelope, ContactMemoType } from '@/types';
+import { Download, Loader2, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-// ---------------------------------------------------------------------------
-// Token options aligned with backend contract
-// ---------------------------------------------------------------------------
-const TOKEN_OPTIONS = ['XLM', 'USDC', 'USDT', 'BTC', 'ETH'] as const;
-const MEMO_TYPE_OPTIONS: { value: ContactMemoType; label: string }[] = [
-  { value: 'none', label: 'No default memo' },
-  { value: 'text', label: 'Text' },
-  { value: 'id', label: 'ID (numeric)' },
-  { value: 'hash', label: 'Hash (hex)' },
-];
-
-// ---------------------------------------------------------------------------
-// Local export helper — purely client-side, no data leaves the device
-// ---------------------------------------------------------------------------
-function exportContactsAsJson(contacts: Contact[]): void {
-  const envelope: ContactExportEnvelope = {
-    format: 'chenpilot-contacts-v1',
-    exportedAt: new Date().toISOString(),
-    contacts: contacts.map((c) => ({
-      name: c.name,
-      address: c.address,
-      tokenType: c.tokenType,
-      defaultMemo: c.defaultMemo,
-      defaultMemoType: c.defaultMemoType,
-      isFavorite: c.isFavorite,
-      createdAt: c.createdAt,
-    })),
-  };
-  const blob = new Blob([JSON.stringify(envelope, null, 2)], {
-    type: 'application/json',
-  });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = `chenpilot-contacts-${new Date().toISOString().slice(0, 10)}.json`;
-  anchor.click();
-  // Release the object URL to free memory after a short delay
-  setTimeout(() => URL.revokeObjectURL(url), 10_000);
-}
-
-// ---------------------------------------------------------------------------
-// Blank form state
-// ---------------------------------------------------------------------------
-const blankForm = (): CreateContactRequest => ({
-  name: '',
-  address: '',
-  tokenType: 'XLM',
-  defaultMemo: '',
-  defaultMemoType: 'none',
-});
-
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
-import { ImportPreviewModal } from '@/components/contacts/ImportPreviewModal';
-import { Users, Plus, Search, Edit, Trash2, Copy, QrCode, Upload } from 'lucide-react';
-import { formatAddress } from '@/utils/format';
-import { validateContactAddress, normalizeContactAddress } from '@/utils/validation';
-import { parseImportFile } from '@/utils/contactsImport';
-import type { ContactsImportPreview, ValidImportRow } from '@/utils/contactsImport';
-import { Contact, CreateContactRequest } from '@/types';
-import { PAGINATION } from '@/constants';
-import { buildClipboardFallbackMessage, copyTextToClipboard } from '@/utils/clipboard';
-import toast from 'react-hot-toast';
 
 const createEmptyContactForm = (): CreateContactRequest => ({
   name: '',
@@ -170,6 +101,130 @@ export default function ContactsPage() {
   );
     void dispatch(getContacts());
   }, [dispatch, isAuthenticated, router]);
+// ---------------------------------------------------------------------------
+// Token options aligned with backend contract
+// ---------------------------------------------------------------------------
+const TOKEN_OPTIONS = ['XLM', 'USDC', 'USDT', 'BTC', 'ETH'] as const;
+const MEMO_TYPE_OPTIONS: { value: ContactMemoType; label: string }[] = [
+  { value: 'none', label: 'No default memo' },
+  { value: 'text', label: 'Text' },
+  { value: 'id', label: 'ID (numeric)' },
+  { value: 'hash', label: 'Hash (hex)' },
+];
+
+// ---------------------------------------------------------------------------
+// Local export helper — purely client-side, no data leaves the device
+// ---------------------------------------------------------------------------
+function exportContactsAsJson(contacts: Contact[]): void {
+  const envelope: ContactExportEnvelope = {
+    format: 'chenpilot-contacts-v1',
+    exportedAt: new Date().toISOString(),
+    contacts: contacts.map((c) => ({
+      name: c.name,
+      address: c.address,
+      tokenType: c.tokenType,
+      defaultMemo: c.defaultMemo,
+      defaultMemoType: c.defaultMemoType,
+      isFavorite: c.isFavorite,
+      createdAt: c.createdAt,
+    })),
+  };
+  const blob = new Blob([JSON.stringify(envelope, null, 2)], {
+    type: 'application/json',
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `chenpilot-contacts-${new Date().toISOString().slice(0, 10)}.json`;
+  anchor.click();
+  // Release the object URL to free memory after a short delay
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
+// ---------------------------------------------------------------------------
+// Blank form state
+// ---------------------------------------------------------------------------
+const blankForm = (): CreateContactRequest => ({
+  name: '',
+  address: '',
+  tokenType: 'XLM',
+  defaultMemo: '',
+  defaultMemoType: 'none',
+});
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
+import { ImportPreviewModal } from '@/components/contacts/ImportPreviewModal';
+import { Users, Plus, Search, Edit, Trash2, Copy, QrCode, Upload } from 'lucide-react';
+import { formatAddress } from '@/utils/format';
+import { validateContactAddress, normalizeContactAddress } from '@/utils/validation';
+import { parseImportFile } from '@/utils/contactsImport';
+import type { ContactsImportPreview, ValidImportRow } from '@/utils/contactsImport';
+import { Contact, CreateContactRequest } from '@/types';
+import { PAGINATION } from '@/constants';
+import { buildClipboardFallbackMessage, copyTextToClipboard } from '@/utils/clipboard';
+import toast from 'react-hot-toast';
+
+const blankForm = (): CreateContactRequest => ({
+  name: '',
+  address: '',
+  tokenType: 'XLM',
+  defaultMemo: '',
+  defaultMemoType: 'none',
+});
+
+export default function ContactsPage() {
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { list: contacts, isLoading, mutating, mutationError } = useAppSelector(
+    (state) => state.contacts,
+  );
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [contactsPage, setContactsPage] = useState(1);
+
+  // Create modal
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  // Edit modal
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isAddressChangeConfirmationOpen, setIsAddressChangeConfirmationOpen] = useState(false);
+  const [editingContact, setEditingContact] = useState<Contact | null>(null);
+  const [formData, setFormData] = useState<CreateContactRequest>({
+    name: '',
+    address: '',
+    tokenType: 'XLM',
+  });
+  const [formData, setFormData] = useState<CreateContactRequest>(blankForm());
+  const [addressError, setAddressError] = useState<string | null>(null);
+
+  // Import state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importPreview, setImportPreview] = useState<ContactsImportPreview | null>(null);
+  const [isImportPreviewOpen, setIsImportPreviewOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+
+  /** Timer refs keyed by contact id so multiple undo windows can coexist. */
+  const undoTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  // IDs for accessible live-region and search label
+  const searchId = useId();
+  const resultCountId = useId();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/auth/login');
+      return;
+    }
+    dispatch(getContacts());
+  }, [dispatch, isAuthenticated, router]);
+
+  const filteredContacts = contacts.filter(
+    (contact) =>
+      contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contact.address.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
 
   const filteredContacts = filterContacts(contacts, searchTerm);
   const pageCount = Math.ceil(filteredContacts.length / PAGINATION.CONTACTS_PAGE_SIZE);
