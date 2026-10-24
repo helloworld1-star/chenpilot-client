@@ -16,7 +16,7 @@ export const useOfflineQueue = () => {
     if (isOnline && messageQueue.length > 0) {
       processQueue();
     }
-  }, [isOnline]);
+  }, [isOnline, messageQueue.length, processQueue]);
 
   const processQueue = useCallback(async () => {
     const queueCopy = [...messageQueue];
@@ -31,7 +31,7 @@ export const useOfflineQueue = () => {
         dispatch(dequeueMessage(queuedMsg.id));
 
         toast.success('Queued message sent');
-      } catch (error: any) {
+      } catch (error: unknown) {
         // The row is now `failed` with a retry action; drop it from the automatic queue
         dispatch(dequeueMessage(queuedMsg.id));
         const errorMsg = error instanceof Error ? error.message : String(error);
@@ -44,8 +44,23 @@ export const useOfflineQueue = () => {
     }
   }, [messageQueue, dispatch]);
 
+  const isQueueableOperation = useCallback((query: string): boolean => {
+    const lower = query.toLowerCase();
+    const forbiddenKeywords = ['pay', 'send', 'sign', 'transfer', 'fund', 'withdraw', 'stake', 'deploy'];
+    for (const keyword of forbiddenKeywords) {
+      if (lower.includes(keyword)) {
+        return false;
+      }
+    }
+    return true;
+  }, []);
+
   const queueMessageForSending = useCallback(
-    (query: string) => {
+    (query: string, forceExplicit = false) => {
+      if (!forceExplicit && !isQueueableOperation(query)) {
+        toast.error('Payment and signing actions are excluded from offline queueing by default.');
+        return null;
+      }
       const msgId = `queued_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       dispatch(
         queueMessage({
@@ -53,9 +68,10 @@ export const useOfflineQueue = () => {
           query,
         })
       );
+      toast.success('Operation queued for replay when online.');
       return msgId;
     },
-    [dispatch]
+    [dispatch, isQueueableOperation]
   );
 
   return {
@@ -63,5 +79,6 @@ export const useOfflineQueue = () => {
     messageQueue,
     queueMessageForSending,
     processQueue,
+    isQueueableOperation,
   };
 };
